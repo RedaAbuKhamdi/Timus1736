@@ -1,10 +1,18 @@
 
 
 def read_input():
-    with open('input.txt', 'r') as f:
-        n = int(f.readline())
-        scores = [int(score) for score in f.readline().split()]
+    n = int(input())
+    scores = [int(score) for score in input().split()]
     return n, scores
+
+possible_results = {
+
+    (3, 0) : "<",
+    (0, 3) : ">",
+    (2, 1) : "<=",
+    (1, 2) : ">=",
+
+}
 
 class Network():
      
@@ -33,27 +41,18 @@ class Network():
         self.n = n
         self.scores = scores
         self.games = games
-        self.game_results = [''] * len(games)
         self.team_start = team_start
-
-    def to_team(self, vertex):
-
-        if (vertex - self.team_start >= 0) and vertex != self.size-1:
-            return vertex-self.team_start
-        elif vertex > 0 and vertex < self.team_start:
-            return vertex - 1
-        else:
-            return vertex
         
 
     def bfs(self, s, t, parent):
+
         visited = [False] * self.size
-        queue = []  # Using list as a queue
+        queue = []  
         queue.append(s)
         visited[s] = True
 
         while queue:
-            u = queue.pop(0)  # Pop from the start of the list
+            u = queue.pop(0) 
 
             for ind, val in enumerate(self.matrix[u]):
                 if not visited[ind] and val > 0:
@@ -82,39 +81,29 @@ class Network():
                 self.matrix[v][u] += path_flow
                 v = parent[v]
 
-            path = []
-            v = sink
-            while(v != source):
-                path.append(v)
-                v = parent[v]
-            path.append(source)
-            path.reverse()
-            print(path)
-            self.game_results[path[1] - 1] = "{0} {1} ({2}) {3}".format(
-                self.to_team(path[1])+1,
-                self.to_team(path[-2])+1,
-                path_flow,
-                tuple((el + 1 for el in self.games[path[1]-1]))
-            )
-            self.print_matrix()
-            
-
         return max_flow
 
-    def print_matrix(self):
-        print('-'*20)
-        for row in self.matrix:
-            print(
-                row
-            )
-        print('='*20)
+    def get_result(self):
+        team_start = n*(n-1)//2+1
+        pointer = 1
+        for i in range(n):
+            for j in range(i+1, n):
+                yield "{0} {1} {2}".format(
+                    i + 1,
+                    possible_results[(self.matrix[pointer][team_start+i], self.matrix[pointer][team_start+j])],
+                    j + 1
+                )
+                pointer += 1
 
 n, scores = read_input()
 
 network = Network(n, scores)
 
-print(sum(scores) == network.edmonds_karp(0, network.size-1))
-print("\n".join(network.game_results))
-network.print_matrix()
+if sum(scores) == network.edmonds_karp(0, network.size-1):
+    print("CORRECT")
+    for result in network.get_result():
+        print(result)
+else:
+    print("INCORRECT")
 
 
